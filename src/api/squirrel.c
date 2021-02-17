@@ -1374,6 +1374,12 @@ static void checkForceExit(HSQUIRRELVM vm, SQInteger type, const SQChar* sourceN
         sq_throwerror(vm, "script execution was interrupted");
 }
 
+static void squirrel_bread(){}
+
+static void squirrel_bwrite(){}
+
+static void squirrel_bhas(){}
+
 static void initAPI(tic_core* core)
 {
     HSQUIRRELVM vm = core->squirrel;

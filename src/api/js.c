@@ -869,6 +869,12 @@ s32 duk_timeout_check(void* udata)
     return ForceExitCounter++ > 1000 ? tick->forceExit && tick->forceExit(tick->data) : false;
 }
 
+static void duk_bread(){}
+
+static void duk_bwrite(){}
+
+static void duk_bhas(){}
+
 static void initDuktape(tic_core* core)
 {
     closeJavascript((tic_mem*)core);

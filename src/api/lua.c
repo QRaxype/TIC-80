@@ -1277,6 +1277,68 @@ static void checkForceExit(lua_State *lua, lua_Debug *luadebug)
         luaL_error(lua, "script execution was interrupted");
 }
 
+static s32 lua_bread(lua_State *lua){
+	tic_core *tic = getLuaCore(lua);
+	s32 top = lua_gettop(lua);
+	if(top >= 1){
+		u8 index = getLuaNumber(lua, 1);
+		index = CLAMP(index, 1, 3);
+		if(tic->bfile[index-1].loaded){
+			lua_pushlstring(lua, tic->bfile[index - 1].data, (128 * 1024));
+		}
+		else{
+			lua_pushnil(lua);
+		}
+		return 1;
+	}
+	return 0;
+}
+static s32 lua_bwrite(lua_State *lua){
+#define DATAMAX (128 * 1024)
+	tic_core *tic = getLuaCore(lua);
+	s32 top = lua_gettop(lua);
+	if(top >= 2){
+		u8 index = getLuaNumber(lua, 1);
+		index = CLAMP(index, 1, 3);
+		--index;
+		if(tic->bfile[index].loaded){
+			u8 data[128 * 1024] = {0};
+			u32 len = 0;
+			const char *str;
+			str = lua_tostring(lua, 2);
+			if(!str){
+				lua_pushboolean(lua, false);
+				return 1;
+			}
+			len = lua_rawlen(lua, 2);
+			
+			//memcpy(&data, str, min(len+1, DATAMAX));
+			//memcpy(&tic->bfile[index].data, &data, DATAMAX);
+			//memcpy(tic->bfile[index].data, str, min(DATAMAX, len));
+
+			strncpy(data, str, len);
+			//memcpy(tic->bfile[index].data, data, 128 * 1024);
+
+			tic_api_bwrite(tic, index, data, len);
+			lua_pushboolean(lua, true);
+			return 1;
+		}
+		return 0;
+	}
+	return 0;
+#undef DATAMAX
+}
+
+static s32 lua_bhas(lua_State *lua){
+	tic_core *tic = getLuaCore(lua);
+	if(lua_gettop(lua) >= 1){
+		u8 index = getLuaNumber(lua, 1);
+		lua_pushboolean(lua, tic->bfile[index - 1].loaded);
+		return 1;
+	}
+	return 0;
+}
+
 static void initAPI(tic_core* core)
 {
     lua_pushlightuserdata(core->lua, core);

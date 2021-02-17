@@ -210,6 +210,13 @@ typedef struct
         } time;
     } pause;
 
+	struct{
+		bool loaded;
+		const char name[255];
+		u64 size;
+		u8 data[128 * 1024], info[8];
+	} bfile[3];
+
 } tic_core;
 
 #if defined(TIC_BUILD_WITH_SQUIRREL)

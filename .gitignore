@@ -169,3 +169,4 @@ build/x64/
 build/linux/tic80.desktop
 build/compile_commands.json
 CMakeSettings.json
+build/android/local.properties

@@ -41,6 +41,32 @@ STATIC_ASSERT(tic_map, sizeof(tic_map) < 1024 * 32);
 STATIC_ASSERT(tic_vram, sizeof(tic_vram) == TIC_VRAM_SIZE);
 STATIC_ASSERT(tic_ram, sizeof(tic_ram) == TIC_RAM_SIZE);
 
+void tic_core_bload(tic_mem *mem, u8 index, void *data, const char *_name, u8 info[8]){
+	tic_core *tic = (tic_core*)mem;
+	strcpy(tic->bfile[index].name, _name);
+	tic->bfile[index].loaded = true;
+	tic->bfile[index].size = 128;
+	memcpy(tic->bfile[index].data, data, 128 * 1024);
+	memcpy(tic->bfile[index].info, info, 8);
+}
+void tic_core_bunload(tic_mem *mem){
+	tic_core *tic = (tic_core*)mem;
+	for(size_t i = 0; i < 3; i++){
+		tic->bfile[i].loaded = false;
+	}
+}
+void tic_core_bfile(tic_mem *mem, u8 index, bool *loaded, char name[255], u8 *data, u8 info[8]){
+	tic_core *tic = (tic_core*)mem;
+	*loaded = tic->bfile[index].loaded;
+	strcpy(name, tic->bfile[index].name);
+	memcpy(data, tic->bfile[index].data, 128 * 1024);
+	memcpy(info, tic->bfile[index].info, 8);
+}
+void tic_api_bwrite(tic_mem *mem, u8 index, const char *data, int lenght){
+	tic_core *tic = (tic_core*)mem;
+	memcpy(tic->bfile[index].data, data, MIN(lenght, 128*1024));
+}
+
 static inline u32* getOvrAddr(tic_mem* tic, s32 x, s32 y)
 {
     enum { Top = (TIC80_FULLHEIGHT - TIC80_HEIGHT) / 2 };

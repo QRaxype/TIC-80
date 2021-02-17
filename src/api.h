@@ -141,7 +141,10 @@ typedef struct
     macro(key,          1,  bool,       tic_mem*, tic_key key) \
     macro(keyp,         3,  bool,       tic_mem*, tic_key key, s32 hold, s32 period) \
     macro(fget,         2,  bool,       tic_mem*, s32 index, u8 flag) \
-    macro(fset,         3,  void,       tic_mem*, s32 index, u8 flag, bool value)
+    macro(fset,         3,  void,       tic_mem*, s32 index, u8 flag, bool value) \
+    macro(bread,        1,  void,   tic_mem*, u8 index) \
+    macro(bwrite,       2,  void,   tic_mem*, u8 index, const char *data, int lenght) \
+    macro(bhas,         1,  void,   tic_mem*, u8 index)
 //      |         |       |             |
 //      '---------+-------+-------------+------------------- - - -
 
@@ -183,6 +186,9 @@ struct tic_mem
 };
 
 tic_mem* tic_core_create(s32 samplerate);
+void tic_core_bload(tic_mem * mem, u8 index, void * data, const char*, u8 info[8]);
+void tic_core_bunload(tic_mem * mem);
+void tic_core_bfile(tic_mem * mem, u8 index, bool * loaded, char name[255], u8 * data, u8 info[8]);
 void tic_core_close(tic_mem* memory);
 void tic_core_pause(tic_mem* memory);
 void tic_core_resume(tic_mem* memory);

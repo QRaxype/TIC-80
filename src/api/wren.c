@@ -1212,6 +1212,12 @@ static void wren_fset(WrenVM* vm)
     wrenError(vm, "invalid params, fset(sprite,flag,value)\n");
 }
 
+static void wren_bread(){}
+
+static void wren_bwrite(){}
+
+static void wren_bhas(){}
+
 static WrenForeignMethodFn foreignTicMethods(const char* signature)
 {
     if (strcmp(signature, "static TIC.btn(_)"                   ) == 0) return wren_btn;
