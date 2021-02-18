@@ -66,6 +66,162 @@ void tic_api_bwrite(tic_mem *mem, u8 index, const char *data, int lenght){
 	tic_core *tic = (tic_core*)mem;
 	memcpy(tic->bfile[index].data, data, MIN(lenght, 128*1024));
 }
+void tic_api_info(tic_mem *mem, char platform[64]){
+	tic_core *tic = (tic_core*)mem;
+	if(platform){
+		bool know = false;
+#ifdef __TIC_WINDOWS__
+		strcpy(platform, "windows");
+		know = true;
+#endif // __TIC_WINDOWS
+#ifdef __TIC_ANDROID__
+		strcpy(platform, "android");
+		know = true;
+#endif // __TIC_ANDROID__
+#ifdef __TIC_LINUX__
+		strcpy(platform, "linux");
+		know = true;
+#endif // __TIC_LINUX__
+
+		if(!know){
+			strcpy(platform, "unknown");
+		}
+	}
+
+	return;
+}
+void tic_core_cload(tic_mem *mem, u8 index, void *data, u32 size, char name[256]){
+	tic_core *tic = (tic_core*)mem;
+	tic->acart[index].loaded = true;
+	strcpy(tic->acart[index].name, name);
+}
+void tic_core_cunload(tic_mem *mem, u8 index){
+	tic_core *tic = (tic_core*)mem;
+	if(index){
+		tic->acart[index-1].loaded = false;
+	}
+	else{
+		for(size_t i = 0; i < 3; i++){
+			tic->acart[i].loaded = false;
+		}
+	}
+}
+
+tic_cartridge* tic_core_acart(tic_mem *mem, u8 index, bool check, bool *loaded, char name[256]){
+	tic_core *tic = (tic_core*)mem;
+	if(loaded){
+		*loaded = tic->acart[index].loaded;
+	}
+	if(name){
+		strcpy(name, tic->acart[index].name);
+	}
+	return check ? (tic->acart[index].loaded ? &tic->acart[index].cart : (tic_cartridge*)NULL) : &tic->acart[index].cart;
+}
+s8 tic_core_resid(tic_mem *mem, const char *str){
+	if(strcmp(str, "tiles") == 0){
+		return 1;
+	}
+	else if(strcmp(str, "sprites") == 0){
+		return 2;
+	}
+	else if(strcmp(str, "map") == 0){
+		return 3;
+	}
+	else if(strcmp(str, "sfx") == 0){
+		return 4;
+	}
+	else if(strcmp(str, "music") == 0){
+		return 5;
+	}
+	else if(strcmp(str, "flags") == 0){
+		return 6;
+	}
+	else if(strcmp(str, "palettes") == 0){
+		return 7;
+	}
+	else{
+		return -1;
+	}
+}
+bool tic_api_chas(tic_mem *mem, u8 index){
+	tic_core *tic = (tic_core*)mem;
+	return tic->acart[index].loaded;
+}
+u8 tic_api_cpeek(tic_mem *mem, u8 index, u32 addr){
+	tic_core *tic = (tic_core*)mem;
+	tic_cartridge *cart = &tic->acart[index].cart;
+	if(addr>=sizeof(tic_bank)){
+		return (u8)(*((u8*)(cart->banks) + addr));
+	}
+	else{
+		return (u8)(*((u8*)(&cart->bank0) + addr));
+	}
+}
+void tic_api_cpoke(tic_mem *mem, u8 index, u32 addr, u8 value){
+	tic_core *tic = (tic_core*)mem;
+	tic_cartridge *cart = &tic->acart[index].cart;
+	if(addr >= sizeof(tic_bank)){
+		(*((u8*)(cart->banks) + addr))=value;
+	}
+	else{
+		(*((u8*)(&cart->bank0) + addr)) = value;
+	}
+}
+void tic_api_cres(tic_mem *mem, u8 index, u8 res, void **data, u32 *size, u32 argc, s32 v1, s32 v2, s32 v3, s32 v4, s32 v5, s32 v6, s32 v7, s32 v8){
+	tic_core *tic = (tic_core*)mem;
+	tic_cartridge *cart = &tic->acart[index].cart;
+	tic_bank *bank = &cart->bank0;
+	if(argc == 0){
+		switch(res){
+			case 1:
+			case 2:
+				{
+					*size = sizeof(tic_tiles);
+					*data = (res == 1) ? (&bank->tiles) : (&bank->sprites);
+				}
+				break;
+			case 3:
+				{
+					*size = sizeof(tic_map);
+					*data = &bank->map;
+				}
+				break;
+			case 4:
+				{
+					*size = sizeof(tic_sfx);
+					*data = &bank->sfx;
+				}
+				break;
+			case 5:
+				{
+					*size = sizeof(tic_music);
+					*data = &bank->music;
+				}
+				break;
+			case 6:
+				{
+					*size = sizeof(tic_flags);
+					*data = &bank->flags;
+				}
+				break;
+			case 7:
+				{
+					*size = sizeof(tic_palettes);
+					*data = &bank->palette;
+				}
+				break;
+
+			default:
+				break;
+		}
+	}
+	else{
+		"not impliment";
+	}
+}
+void tic_api_cswap(tic_mem *mem, u8 index, u8 res, u32 argc, s32 v1, s32 v2, s32 v3, s32 v4, s32 v5, s32 v6, s32 v7, s32 v8){
+
+}
 
 static inline u32* getOvrAddr(tic_mem* tic, s32 x, s32 y)
 {

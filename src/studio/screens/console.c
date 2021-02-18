@@ -2386,6 +2386,235 @@ static void onConsoleGetCommand(Console* console, const char* name)
 
 #endif
 
+static char** str_split(char* a_str, const char a_delim){
+	char** result = 0;
+	size_t count = 0;
+	char* tmp = a_str;
+	char* last_comma = 0;
+	char delim[2];
+	delim[0] = a_delim;
+	delim[1] = 0;
+
+	/* Count how many elements will be extracted. */
+	while(*tmp){
+		if(a_delim == *tmp){
+			count++;
+			last_comma = tmp;
+		}
+		tmp++;
+	}
+
+	/* Add space for trailing token. */
+	count += last_comma < (a_str + strlen(a_str) - 1);
+
+	/* Add space for terminating null string so caller
+	   knows where the list of returned strings ends. */
+	count++;
+
+	result = malloc(sizeof(char*) * count);
+
+	if(result){
+		size_t idx = 0;
+		char* token = strtok(a_str, delim);
+
+		while(token){
+
+			*(result + idx++) = strdup(token);
+			token = strtok(0, delim);
+		}
+
+		*(result + idx) = 0;
+	}
+
+	return result;
+}
+static void cmd_bload(Console *con, const char *arg){
+	if(arg && strlen(arg)){
+		u8 data[128 * 1024 + 8], *tmp;
+		char **params = str_split(arg, ' ');
+		char path[TICNAME_MAX] = {0};
+		strcat(path, "$B/");
+		strcat(path, params[0]);
+		strcpy(path, tic_fs_pathroot(con->fs, path));
+		u32 s = 0;
+		tmp = fs_read(path, &s);
+		if(tmp){
+			memcpy(data, tmp, 128 * 1024 + 8);
+			free(tmp);
+			if(params[1]){
+				tic_core_bload(con->tic, CLAMP(atoi(params[1]), 1, 3) - 1, data + 8, path, data);
+			}
+			else{
+				tic_core_bload(con->tic, 0, data + 8, path, data);
+			}
+		}
+		else{
+			printBack(con, "\nCan't open file");
+		}
+		free(params);
+	}
+	commandDone(con);
+}
+
+static void cmd_bunload(Console *con, const char *arg){
+	tic_core_bunload(con->tic);
+	commandDone(con);
+}
+
+static void cmd_bnew(Console *con, const char *arg){
+	if(!tic_fs_exists(con->fs, "/$B/")){
+		tic_fs_makedir(con->fs, tic_fs_path(con->fs, "/$B/"));
+	}
+	if(arg && strlen(arg)){
+		char **params = str_split(arg, ' ');
+		char path[TICNAME_MAX] = {0};
+		strcat(path, "$B/");
+		strcat(path, params[0]);
+		strcpy(path, tic_fs_pathroot(con->fs, path));
+		int size = 1;
+		u8 info[8] = {0};
+		u8 buffer[128 * 1024 + 8] = {0};
+		if(params[1]){
+			int tmp = atoi(params[1]);
+			size = (tmp > 0) ? (tmp < 128 ? tmp : 1) : 1;
+		}
+		else{
+			size = 1;
+		}
+		size = 128;
+		memset(info, 0, 8);
+		info[0] = size;
+		memcpy(buffer, info, 8);
+		memset(buffer + 8, 0, size * 1024);
+		//if(!fsWriteFile(path, buffer, size * 1024 + 8)){
+		if(!fs_write(path, buffer, size * 1024 + 8)){
+			printBack(con, "\nError create file");
+		}
+		free(params);
+	}
+	commandDone(con);
+}
+
+static void cmd_bdel(Console *con, const char *arg){
+	//if(arg, strlen(arg)){
+	if(arg && strlen(arg)){
+		char path[TICNAME_MAX] = {0};
+		con->fs;
+		strcat(path, "/$B/");
+		strcat(path, arg);
+		if(tic_fs_delfile(con->fs, path)){
+			printBack(con, "\nFail delete file");
+		}
+	}
+	commandDone(con);
+}
+
+static void cmd_blist(Console *con, const char *arg){
+	bool loaded[4] = {0};
+	const char *nums[4] = {"1: ", "2: ", "3: ", "4: "};
+	for(size_t i = 0; i < 3; i++){
+		bool l = false;
+		char name[TICNAME_MAX] = {0};
+		u8 data[128 * 1024 + 8];
+		tic_core_bfile(con->tic, i, &l, name, data + 8, data);
+		if(l){
+			printBack(con, "\n");
+			printBack(con, nums[i]);
+			printBack(con, name);
+		}
+	}
+	commandDone(con);
+}
+
+static void cmd_bsave(Console *con, const char *arg){
+	int index = 0;
+	if(arg && strlen(arg)){
+		index = atoi(arg);
+	}
+	if(index == 0){
+		for(size_t i = 0; i < 3; i++){
+			bool loaded;
+			char name[255];
+			u8 data[128 * 1024 + 8] = {0}, info[8];
+			tic_core_bfile(con->tic, i, &loaded, &name, data + 8, data);
+			if(loaded){
+				if(!fs_write(name, data, 128 * 1024)){
+					printBack(con, "Fail save file");
+				}
+			}
+		}
+	}
+	else{
+		bool loaded;
+		char name[255];
+		u8 data[128 * 1024 + 8] = {0}, info[8];
+		tic_core_bfile(con->tic, CLAMP(index, 1, 3) - 1, &loaded, &name, data + 8, data);
+		if(loaded){
+			if(!fs_write(name, data, 128 * 1024)){
+				printBack(con, "cmd_bsave error");
+			}
+		}
+	}
+	commandDone(con);
+}
+
+static void cmd_cload(Console *con, const char *arg){
+	if(arg && strlen(arg)){
+		char **params = str_split(arg, ' ');
+		if(params[0]){
+			char *name = getCartName(params[0]);
+			int size = 0;
+			void *data = tic_fs_load(con->fs, name, &size);
+			u8 index = 1;
+			if(data){
+				if(params[1]){
+					index = CLAMP(atoi(params[1]), 1, 4);
+				}
+				tic_cartridge *cart = tic_core_acart(con->tic, index - 1, false, NULL, NULL);
+				tic_cart_load(cart, data, size);
+				tic_core_cload(con->tic, index-1, data, size, name);
+			}
+			else{
+				printBack(con, "\nLoad cart error");
+			}
+			free(data);
+		}
+		else{
+			printBack(con, "\nEmpty cart  name");
+		}
+		free(params);
+	}
+	else{
+		printBack(con, "\nEmpty cart name");
+	}
+	commandDone(con);
+}
+
+static void cmd_cunload(Console *con, const char *arg){
+	u8 index = 0;
+	if(arg && strlen(arg)){
+		index = atoi(arg);
+	}
+	tic_core_cunload(con->tic, index);
+	commandDone(con);
+}
+
+static void cmd_clist(Console *con, const char *arg){
+	bool loaded[4] = {0};
+	const char *nums[4] = {"1: ", "2: ", "3: ", "4: "};
+	for(size_t i = 0; i < 4; i++){
+		bool l = false;
+		char name[TICNAME_MAX] = {0};
+		tic_cartridge *cart = tic_core_acart(con->tic, i, false, &l, name);
+		if(l){
+			printBack(con, "\n");
+			printBack(con, nums[i]);
+			printBack(con, name);
+		}
+	}
+	commandDone(con);
+}
+
 static const struct
 {
     const char* command;
@@ -2424,6 +2653,17 @@ static const struct
     {"version", NULL, "show the current version",   onConsoleVersionCommand},
     {"surf",    NULL, "open carts browser",         onConsoleSurfCommand},
     {"menu",    NULL, "show game menu",             onConsoleGameMenuCommand},
+	
+	{"bload",   NULL, "load bfile",                 cmd_bload},
+	{"bunload", NULL, "unload all bfiles",          cmd_bunload},
+	{"bnew",    "bcreate", "create new bfile",      cmd_bnew},
+	{"bdel",    "bremove", "remove bfile",          cmd_bdel},
+	{"blist",   NULL, "show list of loaded bfiles", cmd_blist},
+	{"bsave",   NULL, "save bfile",                 cmd_bsave},
+
+	{"cload",   NULL, "load cart > additional slot",cmd_cload},
+	{"cunload", NULL, "unload all additional carts",cmd_cunload},
+	{"clist",   NULL, "show list of loaded carts",  cmd_clist},
 };
 
 typedef struct

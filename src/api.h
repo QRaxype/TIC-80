@@ -143,8 +143,21 @@ typedef struct
     macro(fget,         2,  bool,       tic_mem*, s32 index, u8 flag) \
     macro(fset,         3,  void,       tic_mem*, s32 index, u8 flag, bool value) \
     macro(bread,        1,  void,   tic_mem*, u8 index) \
-    macro(bwrite,       2,  void,   tic_mem*, u8 index, const char *data, int lenght) \
-    macro(bhas,         1,  void,   tic_mem*, u8 index)
+    macro(bwrite,       3,  void,   tic_mem*, u8 index, const char *data, int lenght) \
+    macro(bhas,         1,  void,   tic_mem*, u8 index) \
+    macro(chas,         1,  bool,       tic_mem*, u8 index) \
+    macro(ccode,        2,  void,       tic_mem*, u8 index, char *code) \
+    macro(cpeek,        2,  u8,         tic_mem*, u8 index, u32 addr) \
+    macro(cpoke,        3,  void,       tic_mem*, u8 index, u32 addr, u8 value) \
+    macro(cres,         13, void,       tic_mem*, u8 index, u8 res, void **data, u32 *size, u32 argc, s32 v1, s32 v2, s32 v3, s32 v4, s32 v5, s32 v6, s32 v7, s32 v8) \
+    macro(cswap,        11, void,       tic_mem*, u8 index, u8 res, u32 argc, s32 v1, s32 v2, s32 v3, s32 v4, s32 v5, s32 v6, s32 v7, s32 v8) \
+    macro(cexec,        1,  void,       tic_mem*, u8 index) \
+    macro(net,          0,  void,       tic_mem*) \
+    macro(nsend,        4,  void,       tic_mem*, u8 id, void *data, u32 size, u8 port) \
+    macro(nrecv,        4,  void,       tic_mem*, u8 id, void *data, u32 *size, u8 port) \
+    macro(nrpc,         0,  void,       tic_mem*, u8 id, const char *func, void *argv, u32 argc) \
+    macro(info,         1,  void,       tic_mem*, char platform[64]) \
+    macro(texquad,      18, void,       tic_mem*, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, float u1, float v1, float u2, float v2, float u3, float v3, float u4, float v4, bool use_map, u8* colors, s32 count)
 //      |         |       |             |
 //      '---------+-------+-------------+------------------- - - -
 
@@ -189,6 +202,10 @@ tic_mem* tic_core_create(s32 samplerate);
 void tic_core_bload(tic_mem * mem, u8 index, void * data, const char*, u8 info[8]);
 void tic_core_bunload(tic_mem * mem);
 void tic_core_bfile(tic_mem * mem, u8 index, bool * loaded, char name[255], u8 * data, u8 info[8]);
+void tic_core_cload(tic_mem *mem, u8 index, void *data, u32 size, char name[256]);
+void tic_core_cunload(tic_mem *mem, u8 index);
+tic_cartridge* tic_core_acart(tic_mem *mem, u8 index, bool check, bool *loaded, char name[256]);
+s8 tic_core_resid(tic_mem *mem, const char *str);
 void tic_core_close(tic_mem* memory);
 void tic_core_pause(tic_mem* memory);
 void tic_core_resume(tic_mem* memory);

@@ -1374,11 +1374,32 @@ static void checkForceExit(HSQUIRRELVM vm, SQInteger type, const SQChar* sourceN
         sq_throwerror(vm, "script execution was interrupted");
 }
 
-static void squirrel_bread(){}
+static SQInteger squirrel_bread(HSQUIRRELVM vm){}
 
-static void squirrel_bwrite(){}
+static SQInteger squirrel_bwrite(HSQUIRRELVM vm){}
 
-static void squirrel_bhas(){}
+static SQInteger squirrel_bhas(HSQUIRRELVM vm){}
+
+static SQInteger squirrel_info(HSQUIRRELVM vm){}
+static SQInteger squirrel_texquad(HSQUIRRELVM vm){}
+static SQInteger squirrel_ptexquad(HSQUIRRELVM vm){}
+static SQInteger squirrel_mtexquad(HSQUIRRELVM vm){}
+static SQInteger squirrel_ptextri(HSQUIRRELVM vm){}
+static SQInteger squirrel_mtextri(HSQUIRRELVM vm){}
+static SQInteger squirrel_pmtextri(HSQUIRRELVM vm){}
+
+static SQInteger squirrel_chas(HSQUIRRELVM vm){}
+static SQInteger squirrel_ccode(HSQUIRRELVM vm){}
+static SQInteger squirrel_cpeek(HSQUIRRELVM vm){}
+static SQInteger squirrel_cpoke(HSQUIRRELVM vm){}
+static SQInteger squirrel_cres(HSQUIRRELVM vm){}
+static SQInteger squirrel_cswap(HSQUIRRELVM vm){}
+static SQInteger squirrel_cexec(HSQUIRRELVM vm){}
+
+static SQInteger squirrel_net(HSQUIRRELVM vm){}
+static SQInteger squirrel_nsend(HSQUIRRELVM vm){}
+static SQInteger squirrel_nrecv(HSQUIRRELVM vm){}
+static SQInteger squirrel_nrpc(HSQUIRRELVM vm){}
 
 static void initAPI(tic_core* core)
 {

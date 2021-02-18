@@ -1316,7 +1316,7 @@ static s32 lua_bwrite(lua_State *lua){
 			//memcpy(&tic->bfile[index].data, &data, DATAMAX);
 			//memcpy(tic->bfile[index].data, str, min(DATAMAX, len));
 
-			strncpy(data, str, len);
+			memcpy(data, str, len);
 			//memcpy(tic->bfile[index].data, data, 128 * 1024);
 
 			tic_api_bwrite(tic, index, data, len);
@@ -1338,6 +1338,199 @@ static s32 lua_bhas(lua_State *lua){
 	}
 	return 0;
 }
+
+static s32 lua_info(lua_State *lua){
+	tic_core *tic = getLuaCore(lua);
+	int top = lua_gettop(lua);
+	char platform[64];
+
+	tic_api_info(tic, platform);
+	lua_newtable(lua);
+
+	lua_pushstring(lua, "platform");
+	lua_pushstring(lua, platform);
+	lua_settable(lua, top+1);
+	
+	return 1;
+}
+
+static s32 lua_texquad(lua_State *lua){
+	tic_core *tic = getLuaCore(lua);
+	s32 top = lua_gettop(lua);
+	if(top >= 16){
+		float pt[16];
+
+		for(s32 i = 0; i < COUNT_OF(pt); i++)
+			pt[i] = (float)lua_tonumber(lua, i + 1);
+
+		tic_mem* tic = (tic_mem*)getLuaCore(lua);
+		static u8 colors[TIC_PALETTE_SIZE];
+		s32 count = 0;
+		bool use_map = false;
+
+		//  check for use map 
+		if(top >= 17)
+			use_map = lua_toboolean(lua, 13);
+		//  check for chroma 
+		if(top >= 18){
+			if(lua_istable(lua, 14)){
+				for(s32 i = 1; i <= TIC_PALETTE_SIZE; i++){
+					lua_rawgeti(lua, 14, i);
+					if(lua_isnumber(lua, -1)){
+						colors[i - 1] = getLuaNumber(lua, -1);
+						count++;
+						lua_pop(lua, 1);
+					}
+					else{
+						lua_pop(lua, 1);
+						break;
+					}
+				}
+			}
+			else{
+				colors[0] = getLuaNumber(lua, 14);
+				count = 1;
+			}
+		}
+
+		tic_api_textri(tic, pt[0], pt[1],   //  xy 1
+					   pt[2], pt[3],   //  xy 2
+					   pt[4], pt[5],   //  xy 3
+					   pt[8], pt[9],   //  uv 1
+					   pt[10], pt[11],   //  uv 2
+					   pt[12], pt[13], //  uv 3
+					   use_map,        // use map
+					   colors, count);        // chroma
+		tic_api_textri(tic, pt[2], pt[3],   //  xy 2
+					   pt[4], pt[5],   //  xy 3
+					   pt[6], pt[7],   //  xy 4
+					   pt[10], pt[11],   //  uv 2
+					   pt[12], pt[13],   //  uv 3
+					   pt[14], pt[15], //  uv 4
+					   use_map,        // use map
+					   colors, count);        // chroma
+	}
+	else luaL_error(lua, "invalid parameters, texquad(x1,y1,x2,y2,x3,y3,x4,y4,u1,v1,u2,v2,u3,v3,u4,v4,[use_map=false],[chroma=off])\n");
+	return 0;
+}
+
+static s32 lua_ptexquad(lua_State *lua){}
+static s32 lua_mtexquad(lua_State *lua){}
+static s32 lua_ptextri(lua_State *lua){}
+static s32 lua_mtextri(lua_State *lua){}
+
+static s32 lua_chas(lua_State *lua){
+	tic_core *tic = getLuaCore(lua);
+	u32 top = lua_gettop(lua);
+	if(top >= 1){
+		int index = lua_tonumber(lua, 1);
+		index = CLAMP(index, 1, 4)-1;
+		//lua_pushboolean(lua, tic_core_acart(tic, index, true)!=0);
+		lua_pushboolean(lua, tic_api_chas(tic, index));
+		return 1;
+	}
+	return 0;
+}
+static s32 lua_ccode(lua_State *lua){
+	tic_core *tic = getLuaCore(lua);
+	u32 top = lua_gettop(lua);
+	if(top>=1){
+		int index = lua_tonumber(lua, 1);
+		index = CLAMP(index, 1, 4)-1;
+		tic_cartridge *cart = NULL;
+		cart = tic_core_acart(tic, index, true, NULL, NULL);
+		if(cart){
+			lua_pushstring(lua, cart->code.banks->data);
+			return 1;
+		}
+	}
+	lua_pushnil(lua);
+	return 1;
+}
+static s32 lua_cpeek(lua_State *lua){
+	tic_core *tic = getLuaCore(lua);
+	u32 top = lua_gettop(lua);
+	if(top>=2){
+		u32 index = lua_tonumber(lua, 1), addr = lua_tonumber(lua, 2);
+		index = CLAMP(index, 1, 4)-1;
+		addr = CLAMP(addr, 0, sizeof(tic_cartridge)-1);
+		if(!tic_api_chas(tic, index)){
+			lua_pushnil(lua);
+			return 1;
+		}
+		u8 value = tic_api_cpeek(tic, index, addr);
+		lua_pushinteger(lua, value);
+		return 1;
+	}
+	return 0;
+}
+static s32 lua_cpoke(lua_State *lua){
+	tic_core *tic = getLuaCore(lua);
+	u32 top = lua_gettop(lua);
+	if(top >= 3){
+		u32 index = lua_tonumber(lua, 1), addr = lua_tonumber(lua, 2), value = lua_tonumber(lua, 3);
+		index = CLAMP(index, 1, 4) - 1;
+		addr = CLAMP(addr, 0, sizeof(tic_cartridge) - 1);
+		value = CLAMP(value, 0, 255);
+		if(!tic_api_chas(tic, index)){
+			return 0;
+		}
+		tic_api_cpoke(tic, index, addr, value);
+		return 0;
+	}
+	return 0;
+}
+static s32 lua_cres(lua_State *lua){
+	tic_core *tic = getLuaCore(lua);
+	u32 top = lua_gettop(lua);
+	if(top>=2){
+		u32 index = lua_tonumber(lua, 1), addr = lua_tonumber(lua, 2), value = lua_tonumber(lua, 3);
+		index = CLAMP(index, 1, 4) - 1;
+		s8 res = -1;
+		if(!tic_api_chas(tic, index)){
+			return 0;
+		}
+		if(lua_isinteger(lua, 2)){
+			res = lua_tointeger(lua, 2);
+		}
+		else if(lua_isstring(lua, 2)){
+			res = tic_core_resid(tic, lua_tostring(lua, 2));
+		}
+		else{
+			res = -1;
+		}
+		if(res == -1){
+			lua_pushnil(lua);
+			return 1;
+		}
+
+		void *data = NULL;
+		u32 size = 0;
+
+		if(top>=3){
+			tic_api_trace(tic, "cres args... not implement yet", 2);
+		}
+		else{
+			tic_api_cres(tic, index, res, &data, &size, NULL, 0,0,0,0,0,0,0,0);
+		}
+		if(data && size){
+			lua_pushlstring(lua, data, size);
+			return 1;
+		}
+		else{
+			lua_pushnil(lua);
+			return 1;
+		}
+	}
+	return 0;
+}
+static s32 lua_cswap(lua_State *lua){}
+static s32 lua_cexec(lua_State *lua){}
+
+static s32 lua_net(lua_State *lua){}
+static s32 lua_nsend(lua_State *lua){}
+static s32 lua_nrecv(lua_State *lua){}
+static s32 lua_nrpc(lua_State *lua){}
 
 static void initAPI(tic_core* core)
 {

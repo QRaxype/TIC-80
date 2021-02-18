@@ -1212,11 +1212,31 @@ static void wren_fset(WrenVM* vm)
     wrenError(vm, "invalid params, fset(sprite,flag,value)\n");
 }
 
-static void wren_bread(){}
+static void wren_bread(WrenVM* vm){}
 
-static void wren_bwrite(){}
+static void wren_bwrite(WrenVM* vm){}
 
-static void wren_bhas(){}
+static void wren_bhas(WrenVM* vm){}
+
+static void wren_info(WrenVM* vm){}
+static void wren_texquad(WrenVM *vm){}
+static void wren_ptexquad(WrenVM *vm){}
+static void wren_mtexquad(WrenVM *vm){}
+static void wren_ptextri(WrenVM *vm){}
+static void wren_mtextri(WrenVM *vm){}
+
+static void wren_chas(WrenVM* vm){}
+static void wren_ccode(WrenVM* vm){}
+static void wren_cpeek(WrenVM* vm){}
+static void wren_cpoke(WrenVM* vm){}
+static void wren_cres(WrenVM* vm){}
+static void wren_cswap(WrenVM* vm){}
+static void wren_cexec(WrenVM* vm){}
+
+static void wren_net(WrenVM* vm){}
+static void wren_nsend(WrenVM* vm){}
+static void wren_nrecv(WrenVM* vm){}
+static void wren_nrpc(WrenVM* vm){}
 
 static WrenForeignMethodFn foreignTicMethods(const char* signature)
 {

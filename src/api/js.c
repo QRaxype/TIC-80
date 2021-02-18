@@ -869,13 +869,34 @@ s32 duk_timeout_check(void* udata)
     return ForceExitCounter++ > 1000 ? tick->forceExit && tick->forceExit(tick->data) : false;
 }
 
-static void duk_bread(){}
+static duk_ret_t duk_bread(duk_context* duk){}
 
-static void duk_bwrite(){}
+static duk_ret_t duk_bwrite(duk_context* duk){}
 
-static void duk_bhas(){}
+static duk_ret_t duk_bhas(duk_context* duk){}
 
-static void initDuktape(tic_core* core)
+static duk_ret_t duk_info(duk_context* duk){}
+static duk_ret_t duk_texquad(duk_context* duk){}
+static duk_ret_t duk_ptexquad(duk_context* duk){}
+static duk_ret_t duk_mtexquad(duk_context* duk){}
+static duk_ret_t duk_ptextri(duk_context* duk){}
+static duk_ret_t duk_mtextri(duk_context* duk){}
+
+static duk_ret_t duk_chas(duk_context* duk){}
+static duk_ret_t duk_ccode(duk_context* duk){}
+static duk_ret_t duk_cpeek(duk_context* duk){}
+static duk_ret_t duk_cpoke(duk_context* duk){}
+static duk_ret_t duk_cres(duk_context* duk){}
+static duk_ret_t duk_cswap(duk_context* duk){}
+static duk_ret_t duk_cexec(duk_context* duk){}
+
+static duk_ret_t duk_net(duk_context* duk){}
+static duk_ret_t duk_nsend(duk_context* duk){}
+static duk_ret_t duk_nrecv(duk_context* duk){}
+static duk_ret_t duk_nrpc(duk_context* duk){}
+
+
+static duk_ret_t initDuktape(tic_core* core)
 {
     closeJavascript((tic_mem*)core);
 

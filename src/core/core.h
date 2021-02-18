@@ -217,6 +217,12 @@ typedef struct
 		u8 data[128 * 1024], info[8];
 	} bfile[3];
 
+	struct{
+		bool loaded;
+		const char name[256];
+		tic_cartridge cart;
+	}acart[4];
+
 } tic_core;
 
 #if defined(TIC_BUILD_WITH_SQUIRREL)
